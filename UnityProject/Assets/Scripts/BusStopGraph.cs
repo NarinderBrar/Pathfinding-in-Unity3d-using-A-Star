@@ -40,7 +40,7 @@ public class BusStopGraph : MonoBehaviour
         pairs.Add(new List<int> { 1, 3 });
 
         foreach (var item in wayPoints)
-            mBusStopGraph.AddVertex(new BusStop("stop_" + item.position.x + "_" + item.position.y, item.position.x, item.position.y));
+            mBusStopGraph.AddVertex(new BusStop("stop_" + item.position.x + "_" + item.position.y, item.position.x, item.position.y, item.position.z));
 
         for (int i = 0; i < pairs.Count; i++)
         {
@@ -57,11 +57,10 @@ public class BusStopGraph : MonoBehaviour
         {
             Vector3 pos = Vector3.zero;
             pos.x = mBusStopGraph.Vertices[i].Value.Point.x;
-            pos.y = 0.0f;
-            pos.z = mBusStopGraph.Vertices[i].Value.Point.y;
+            pos.y = mBusStopGraph.Vertices[i].Value.Point.y;
+            pos.z = mBusStopGraph.Vertices[i].Value.Point.z;
 
             GameObject obj = Instantiate(VertexPrefab, pos, Quaternion.identity);
-
             obj.name = mBusStopGraph.Vertices[i].Value.Name;
 
             Vertex_Viz vertexViz = obj.AddComponent<Vertex_Viz>();
@@ -71,7 +70,6 @@ public class BusStopGraph : MonoBehaviour
         Npc.transform.position = new Vector3(mBusStopGraph.Vertices[0].Value.Point.x, mBusStopGraph.Vertices[0].Value.Point.y, -1.0f);
 
         mStart = mBusStopGraph.Vertices[0];
-
 
         mPathFinder.HeuristicCost = BusStop.GetManhattanCost;
         mPathFinder.NodeTraversalCost = BusStop.GetEuclideanCost;
@@ -118,8 +116,8 @@ public class BusStopGraph : MonoBehaviour
         mPathViz.positionCount = reverse_indices.Count;
         for (int i = reverse_indices.Count - 1; i >= 0; i--)
         {
-            Npc.AddWayPoint(new Vector2(reverse_indices[i].Point.x, reverse_indices[i].Point.y));
-            mPathViz.SetPosition(i, new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y, 0.0f));
+            Npc.AddWayPoint(new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y, reverse_indices[i].Point.z));
+            mPathViz.SetPosition(i, new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y, reverse_indices[i].Point.z));
         }
 
         // We set the goal to be the start for next pathfinding

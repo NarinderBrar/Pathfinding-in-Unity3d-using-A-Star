@@ -1,24 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using GameAI.PathFinding;
 
 public class NPC : MonoBehaviour
 {
   public float Speed = 5.0f;
-  public Queue<Vector2> mWayPoints = new Queue<Vector2>();
+  public Queue<Vector3> mWayPoints = new Queue<Vector3>();
 
   void Start()
   {
     StartCoroutine(Coroutine_MoveTo());
   }
 
-  public void AddWayPoint(float x, float y)
+  public void AddWayPoint(float x, float y, float z)
   {
-    AddWayPoint(new Vector2(x, y));
+    AddWayPoint(new Vector3(x, y, z));
   }
 
-  public void AddWayPoint(Vector2 pt)
+  public void AddWayPoint(Vector3 pt)
   {
     mWayPoints.Enqueue(pt);
   }
@@ -29,42 +28,32 @@ public class NPC : MonoBehaviour
     {
       while (mWayPoints.Count > 0)
       {
-        yield return StartCoroutine(
-          Coroutine_MoveToPoint(
-            mWayPoints.Dequeue(), 
-            Speed));
+        yield return StartCoroutine(Coroutine_MoveToPoint(mWayPoints.Dequeue(), Speed));
       }
       yield return null;
     }
   }
 
   // coroutine to move smoothly
-  private IEnumerator Coroutine_MoveOverSeconds(
-    GameObject objectToMove, 
-    Vector3 end, 
-    float seconds)
+  private IEnumerator Coroutine_MoveOverSeconds(GameObject objectToMove, Vector3 end, float seconds)
   {
     float elapsedTime = 0;
     Vector3 startingPos = objectToMove.transform.position;
+
     while (elapsedTime < seconds)
     {
-      objectToMove.transform.position = 
-        Vector3.Lerp(startingPos, end, (elapsedTime / seconds));
+      objectToMove.transform.position =  Vector3.Lerp(startingPos, end, (elapsedTime / seconds));
       elapsedTime += Time.deltaTime;
 
       yield return new WaitForEndOfFrame();
     }
+
     objectToMove.transform.position = end;
   }
 
-  IEnumerator Coroutine_MoveToPoint(Vector2 p, float speed)
+  IEnumerator Coroutine_MoveToPoint(Vector3 p, float speed)
   {
-    Vector3 endP = new Vector3(p.x, p.y, transform.position.z);
-    float duration = (transform.position - endP).magnitude / speed;
-    yield return StartCoroutine(
-      Coroutine_MoveOverSeconds(
-        transform.gameObject,
-        endP,
-        duration));
+    float duration = (transform.position - p).magnitude / speed;
+    yield return StartCoroutine( Coroutine_MoveOverSeconds( transform.gameObject, p, duration));
   }
 }

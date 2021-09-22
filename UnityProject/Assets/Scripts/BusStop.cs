@@ -14,12 +14,14 @@ public class BusStop : System.IEquatable<BusStop>
   /// them as you wish. Our location variable can be 
   /// latitude and longitude or plain simple cartesian coordinates.
   /// </summary>
+  /// 
   public string Name { get; set; }
-  public Vector2 Point { get; set; }
+  public Vector3 Point { get; set; }
 
   #region Constructors
   public BusStop()
   {
+
   }
 
   public BusStop(string names, Vector2 point)
@@ -28,16 +30,15 @@ public class BusStop : System.IEquatable<BusStop>
     Point = point;
   }
 
-  public BusStop(string name, float x, float y)
+  public BusStop(string name, float x, float y, float z)
   {
     Name = name;
-    Point = new Vector2(x, y);
+    Point = new Vector3(x, y, z);
   }
   #endregion
 
   #region Functions related to Equal to hashcode
-  public override bool Equals(object obj) =>
-    this.Equals(obj as BusStop);
+  public override bool Equals(object obj) => this.Equals(obj as BusStop);
 
   public bool Equals(BusStop p)
   {
@@ -66,8 +67,7 @@ public class BusStop : System.IEquatable<BusStop>
     return (Name == p.Name);
   }
 
-  public override int GetHashCode() =>
-    (Name, Point).GetHashCode();
+  public override int GetHashCode() => (Name, Point).GetHashCode();
   #endregion
 
   #region The cost functions and other utility functions
@@ -76,31 +76,22 @@ public class BusStop : System.IEquatable<BusStop>
     return (a.Point - b.Point).magnitude;
   }
 
-  public static float GetManhattanCost(
-    BusStop a,
-    BusStop b)
+  public static float GetManhattanCost(BusStop a,BusStop b)
   {
-    return Mathf.Abs(a.Point.x - b.Point.x) +
-      Mathf.Abs(a.Point.y - b.Point.y);
+    return Mathf.Abs(a.Point.x - b.Point.x) + Mathf.Abs(a.Point.y - b.Point.y);
   }
 
-  public static float GetEuclideanCost(
-    BusStop a,
-    BusStop b)
+  public static float GetEuclideanCost(BusStop a,BusStop b)
   {
     return GetCostBetweenTwoStops(a, b);
   }
 
-  public static float GetCostBetweenTwoStops(
-    BusStop a,
-    BusStop b)
+  public static float GetCostBetweenTwoStops(BusStop a,BusStop b)
   {
     return (a.Point - b.Point).magnitude;
   }
 
-  public static float GetAngleBetweenTwoStops(
-    BusStop a,
-    BusStop b)
+  public static float GetAngleBetweenTwoStops(BusStop a,BusStop b)
   {
     float delta_x = b.Point.x - a.Point.x;
     float delta_y = b.Point.y - a.Point.y;
