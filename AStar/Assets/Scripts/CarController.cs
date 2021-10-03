@@ -4,99 +4,160 @@ using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
-    public float speed = 5.0f;
-    public float senseDistance;
+	//speed of the cars
+	public float speed = 5.0f;
+	//Wait time for Pedestrian 
+	public float PedestrianWaitTime = 3.0f;
+	//range of the ray cast to detect obstacles
+	public float senseDistance;
+	//car moving or stopped
+	public bool stop = false;
+	//Script for refrencing trafic lights
+	public TraficLights traficLights;
+	//list of waypoints
+	public Queue<Vector3> mWayPoints = new Queue<Vector3>();
 
-    public bool stop = false;
+	void Start()
+	{
+		//start coroutine for moving toward a waypoint
+		StartCoroutine( Move() );
+	}
 
-    public TraficLights traficLights;
+	public void AddWayPoint( float x, float y, float z )
+	{
+		AddWayPoint( new Vector3( x, y, z ) );
+	}
 
-    public Queue<Vector3> mWayPoints = new Queue<Vector3>();
+	public void AddWayPoint( Vector3 pt )
+	{
+		mWayPoints.Enqueue( pt );
+	}
 
-    void Start()
-    {
-        StartCoroutine(Coroutine_MoveTo());
-    }
+	public IEnumerator Move()
+	{
+		while( true )
+		{
+			//if waypoint count is greater than 0, start another coroutine
+			while( mWayPoints.Count > 0 )
+				// coroutine for one way point to another
+				yield return StartCoroutine( MoveToWaypoint( mWayPoints.Dequeue(), speed ) );
+			yield return null;
+		}
+	}
 
-    public void AddWayPoint(float x, float y, float z)
-    {
-        AddWayPoint(new Vector3(x, y, z));
-    }
+	IEnumerator MoveToWaypoint( Vector3 p, float speed )
+	{
+		float duration = ( transform.position - p ).magnitude / speed;
+		//now we have destination point, so third coroutine is for actual movement in seconds
+		yield return StartCoroutine( MoveOverSeconds( transform.gameObject, p, duration ) );
+	}
 
-    public void AddWayPoint(Vector3 pt)
-    {
-        mWayPoints.Enqueue(pt);
-    }
+	// coroutine to move smoothly
+	private IEnumerator MoveOverSeconds( GameObject car, Vector3 end, float seconds )
+	{
+		//car should look at destination
+		car.transform.LookAt( end );
 
-    public IEnumerator Coroutine_MoveTo()
-    {
-        while (true)
-        {
-            while (mWayPoints.Count > 0)
-            {
-                yield return StartCoroutine(Coroutine_MoveToPoint(mWayPoints.Dequeue(), speed));
-            }
-            yield return null;
-        }
-    }
+		//time will decrease as car cover its distance
+		float elapsedTime = 0;
 
-    IEnumerator Coroutine_MoveToPoint(Vector3 p, float speed)
-    {
-        float duration = (transform.position - p).magnitude / speed;
-        yield return StartCoroutine(Coroutine_MoveOverSeconds(transform.gameObject, p, duration));
-    }
+		//how fast it will slow down when obstacle detected
+		float slowDown = 1.0f;
 
-    // coroutine to move smoothly
-    private IEnumerator Coroutine_MoveOverSeconds(GameObject objectToMove, Vector3 end, float seconds)
-    {
-        objectToMove.transform.LookAt(end);
+		//start poision
+		Vector3 startingPos = car.transform.position;
 
-        float elapsedTime = 0;
-        float slowDown = 1.0f;
+		//raycast hit for collison detection
+		RaycastHit hit;
 
-        Vector3 startingPos = objectToMove.transform.position;
-        RaycastHit hit;
+		//keep moving untile elapsedTime less than actual duration
+		while( elapsedTime < seconds )
+		{
+			//Linearly interpolates between two points with a value 0 to 1
+			car.transform.position = Vector3.Lerp( startingPos, end, ( elapsedTime / seconds ) );
 
-        while (elapsedTime < seconds)
-        {
-            if (stop)
-            {
-                objectToMove.transform.position = Vector3.Lerp(startingPos, end, (elapsedTime / seconds));
-                elapsedTime += Time.deltaTime * slowDown;
+			//if stop, slow down the car
+			if( stop )
+			{
+				//slow down so that elapsedTime should stop increasing
+				elapsedTime += Time.deltaTime * slowDown;
 
-                slowDown -= Time.deltaTime * 0.5f;
-                slowDown = Mathf.Max(slowDown, 0);
-            }
-            else
-            {
-                if (Physics.Raycast(transform.position, transform.forward, out hit, senseDistance))
-                    if (hit.collider.tag == "stopPoint")
-                    {
-                        stop = true;
-                        traficLights = hit.collider.GetComponent<TraficLights>();
-                    }
+				slowDown -= Time.deltaTime * 0.8f;
+				slowDown = Mathf.Max( slowDown, 0 );
+			}
+			else
+			{
+				//detect if there is any object
+				if( Physics.Raycast( transform.position, transform.forward, out hit, senseDistance ) )
+				{
+					//if its trafic lights
+					if( hit.collider.tag == "stopPoint" )
+					{
+						Transform tlightTf = hit.transform;
 
-                objectToMove.transform.position = Vector3.Lerp(startingPos, end, (elapsedTime / seconds));
-                elapsedTime += Time.deltaTime;
+						if( Vector3.Dot( transform.forward, -tlightTf.forward ) < 0 )
+						{
+							stop = true;
+							traficLights = hit.collider.GetComponent<TraficLights>();
 
-                slowDown = 1.0f;
-            }
+							Debug.Log( "Stopping on trafic light having red signal" );
+						}
+					}
+					//or pedestrian
+					if( hit.collider.tag == "pedestrian" )
+					{
+						stop = true;
+						Debug.Log( "Pedestrian detected, stoped and waiting him for cross the road." );
+						Invoke( "Restart", PedestrianWaitTime );
+					}
+				}
+				elapsedTime += Time.deltaTime;
 
-            yield return new WaitForEndOfFrame();
-        }
+				//it should reset
+				slowDown = 1.0f;
+			}
 
-        objectToMove.transform.position = end;
-    }
+			yield return new WaitForEndOfFrame();
+		}
 
-    private void Update()
-    {
-        if(traficLights!=null)
-        {
-           if( traficLights.count == 3)
-            {
-                traficLights = null;
-                stop = false;
-            }
-        }
-    }
+		//set car position to end, once waypoints done
+		car.transform.position = end;
+	}
+
+	private void Update()
+	{
+		if( traficLights != null )
+		{
+			//check if traic lights on green signal
+			if( traficLights.count == 0 )
+			{
+				traficLights = null;
+				stop = false;
+			}
+		}
+	}
+	private void Restart()
+	{
+		RaycastHit hit;
+
+		//detect if there is any object
+		if( Physics.Raycast( transform.position, transform.forward, out hit, senseDistance ) )
+		{
+			//if its trafic lights
+			if( hit.collider.tag == "stopPoint" )
+			{
+				Debug.Log( "Stopping on trafic light having red signal" );
+				return;
+			}
+			//or pedestrian
+			if( hit.collider.tag == "pedestrian" )
+			{
+				Debug.Log( "Pedestrian detected, stoped and waiting him for cross the road." );
+				Invoke( "Restart", PedestrianWaitTime );
+				return;
+			}
+		}
+
+		stop = false;
+	}
 }

@@ -7,27 +7,39 @@ using UnityEngine.UI;
 
 public class CityGraph : MonoBehaviour
 {
+    //Graph of the city having stop points as nodes
     Graph<StopPoint> mCityGraph = new Graph<StopPoint>();
 
-    [SerializeField]
-    GameObject VertexPrefab;
-
-    [SerializeField]
-    CarController carController;
-
-    [SerializeField]
-    Text StatusText;
-
+    //A Star Path Finder alogorith with stop points as nodes
     AStarPathFinder<StopPoint> mPathFinder = new AStarPathFinder<StopPoint>();
 
-    Graph<StopPoint>.Vertex mGoal;
+    //Start and End vertex
     Graph<StopPoint>.Vertex mStart;
+    Graph<StopPoint>.Vertex mGoal;
 
+    //Previous Start and End vertex
     Graph<StopPoint>.Vertex preGoal;
     Graph<StopPoint>.Vertex preStart;
 
-    LineRenderer mPathViz;
+    //Vertex for visulisation
+    public GameObject vertex;
+    //Car controller script
+    public CarController carController;
+    //Text for showing status
+    public Text StatusText;
+    //gamobject for holding passenger
+    public GameObject passenger;
 
+    //line renderer for path
+    private LineRenderer mPathViz;
+    //path material
+    public Material pathMat;
+    //dropped variable for passanger
+    private bool dropped = false;
+
+    [Header("Nodes and Connections")]
+
+    //list of way points
     public Transform[] wayPoints;
 
     [System.Serializable]
@@ -36,25 +48,51 @@ public class CityGraph : MonoBehaviour
         public int[] pair = new int[2];
     }
 
+    //connections between nodes
     public Pairs[] pairs;
 
-    public enum Goals // your custom enumeration
+    //start points
+    public enum Starts
     {
         point0,
         point1,
         point2,
         point3,
         point4,
-        point5
+        point5,
+        point6,
+        point7,
+        point8,
+        point9
     };
 
-    public Goals goal = Goals.point0;
+    [Header("Start And Goals Selection")]
+    public Starts start = Starts.point0;
+
+    //goal points
+    public enum Goals
+    {
+        point0,
+        point1,
+        point2,
+        point3,
+        point4,
+        point5,
+        point6,
+        point7,
+        point8,
+        point9
+    };
+
+    public Goals goal = Goals.point5;
 
     void CreateGraph()
     {
+        //iterate over waypoints and add them as stop points in the graph
         foreach (var item in wayPoints)
-            mCityGraph.AddVertex(new StopPoint("stop_" + item.position.x + "_" + item.position.y, item.position.x, item.position.y, item.position.z));
+            mCityGraph.AddVertex(new StopPoint("wayPoint_" + item.position.x + "_" + item.position.y, item.position.x, item.position.y, item.position.z));
 
+        //take the pairs and add as connections to the graph
         for (int i = 0; i < pairs.Length; i++)
         {
             int PointA = pairs[i].pair[0];
@@ -65,43 +103,56 @@ public class CityGraph : MonoBehaviour
         }
     }
 
-
     void Start()
     {
         CreateGraph();
 
-        for (int i = 0; i < mCityGraph.Vertices.Count; ++i)
+        //set start points
+        switch (start)
         {
-            Vector3 pos = Vector3.zero;
-            pos.x = mCityGraph.Vertices[i].Value.Point.x;
-            pos.y = mCityGraph.Vertices[i].Value.Point.y;
-            pos.z = mCityGraph.Vertices[i].Value.Point.z;
-
-            GameObject obj = Instantiate(VertexPrefab, pos, Quaternion.identity);
-            obj.name = mCityGraph.Vertices[i].Value.Name;
-
-            PathHighlighter vertexViz = obj.AddComponent<PathHighlighter>();
-            vertexViz.SetVertex(mCityGraph.Vertices[i]);
+            case Starts.point0:
+                mStart = mCityGraph.Vertices[0];
+                preStart = mCityGraph.Vertices[0];
+                break;
+            case Starts.point1:
+                mStart = mCityGraph.Vertices[1];
+                preStart = mCityGraph.Vertices[1];
+                break;
+            case Starts.point2:
+                mStart = mCityGraph.Vertices[2];
+                preStart = mCityGraph.Vertices[2];
+                break;
+            case Starts.point3:
+                mStart = mCityGraph.Vertices[3];
+                preStart = mCityGraph.Vertices[3];
+                break;
+            case Starts.point4:
+                mStart = mCityGraph.Vertices[4];
+                preStart = mCityGraph.Vertices[4];
+                break;
+            case Starts.point5:
+                mStart = mCityGraph.Vertices[5];
+                preStart = mCityGraph.Vertices[5];
+                break;
+            case Starts.point6:
+                mStart = mCityGraph.Vertices[6];
+                preStart = mCityGraph.Vertices[6];
+                break;
+            case Starts.point7:
+                mStart = mCityGraph.Vertices[7];
+                preStart = mCityGraph.Vertices[7];
+                break;
+            case Starts.point8:
+                mStart = mCityGraph.Vertices[8];
+                preStart = mCityGraph.Vertices[8];
+                break;
+            case Starts.point9:
+                mStart = mCityGraph.Vertices[9];
+                preStart = mCityGraph.Vertices[9];
+                break;
         }
 
-        carController.transform.position = new Vector3(mCityGraph.Vertices[0].Value.Point.x, mCityGraph.Vertices[0].Value.Point.y, mCityGraph.Vertices[0].Value.Point.z);
-
-        mStart = mCityGraph.Vertices[0];
-        preStart = mCityGraph.Vertices[0];
-
-        mPathFinder.HeuristicCost = StopPoint.GetManhattanCost;
-        mPathFinder.NodeTraversalCost = StopPoint.GetEuclideanCost;
-        mPathFinder.onSuccess = OnPathFound;
-        mPathFinder.onFailure = OnPathNotFound;
-
-        // We create a line renderer to show the path.
-        mPathViz = transform.gameObject.AddComponent<LineRenderer>();
-        
-        mPathViz.startWidth = 0.2f;
-        mPathViz.endWidth = 0.2f;
-        mPathViz.startColor = Color.magenta;
-        mPathViz.endColor = Color.magenta;
-
+        //set goal points
         switch (goal)
         {
             case Goals.point0:
@@ -128,13 +179,69 @@ public class CityGraph : MonoBehaviour
                 mGoal = mCityGraph.Vertices[5];
                 preGoal = mCityGraph.Vertices[5];
                 break;
+            case Goals.point6:
+                mGoal = mCityGraph.Vertices[6];
+                preGoal = mCityGraph.Vertices[6];
+                break;
+            case Goals.point7:
+                mGoal = mCityGraph.Vertices[7];
+                preGoal = mCityGraph.Vertices[7];
+                break;
+            case Goals.point8:
+                mGoal = mCityGraph.Vertices[8];
+                preGoal = mCityGraph.Vertices[8];
+                break;
+            case Goals.point9:
+                mGoal = mCityGraph.Vertices[9];
+                preGoal = mCityGraph.Vertices[9];
+                break;
         }
 
+        //set car position from start
+        carController.transform.position = new Vector3( mStart.Value.Point.x, mStart.Value.Point.y, mStart.Value.Point.z );
+
+        passenger.transform.position = new Vector3( mGoal.Value.Point.x, mGoal.Value.Point.y, mGoal.Value.Point.z );
+
+        //iterate over vertices
+        for (int i = 0; i < mCityGraph.Vertices.Count; ++i)
+        {
+            Vector3 pos = Vector3.zero;
+            pos.x = mCityGraph.Vertices[i].Value.Point.x;
+            pos.y = mCityGraph.Vertices[i].Value.Point.y;
+            pos.z = mCityGraph.Vertices[i].Value.Point.z;
+
+            //add vertex for visulisation
+            GameObject obj = Instantiate(vertex, pos, Quaternion.identity);
+            obj.name = mCityGraph.Vertices[i].Value.Name;
+
+            //add path for visulisation
+            PathHighlighter vertexViz = obj.AddComponent<PathHighlighter>();
+            vertexViz.SetVertex(mCityGraph.Vertices[i]);
+        }
+
+        //calcualte Heuristic Cost
+        mPathFinder.HeuristicCost = StopPoint.GetHeuristicCost;
+        //calcualte Node Traversal Cost
+        mPathFinder.NodeTraversalCost = StopPoint.GetEuclideanCost;
+        //if path found 
+        mPathFinder.onSuccess = OnPathFound;
+        //if path not found
+        mPathFinder.onFailure = OnPathNotFound;
+
+        // Line renderer to show the path.
+        mPathViz = transform.gameObject.AddComponent<LineRenderer>();
+        mPathViz.startWidth = 0.3f;
+        mPathViz.endWidth = 0.3f;
+        mPathViz.material = pathMat;
+
+        //Initialize the path finder
         mPathFinder.Initialize(mStart, mGoal);
-        StartCoroutine(Coroutine_FindPathSteps());
+
+        //Initialize the path finder
+        StartCoroutine( GetPathSteps());
     }
 
-    IEnumerator Coroutine_FindPathSteps()
+    IEnumerator GetPathSteps()
     {
         while (mPathFinder.Status == PathFinderStatus.RUNNING)
         {
@@ -145,42 +252,41 @@ public class CityGraph : MonoBehaviour
 
     public void OnPathFound()
     {
-        if (StatusText)
-        {
-            StatusText.text = "Path found to destination";
-        }
+        Debug.Log( "Destination Path found" );
+        StatusText.text = "Destination Path found";
+
         PathFinder<StopPoint>.PathFinderNode node = mPathFinder.CurrentNode;
 
+        //reverse the found indices
         List<StopPoint> reverse_indices = new List<StopPoint>();
 
+        //add nodes from the back
         while (node != null)
         {
             reverse_indices.Add(node.Location.Value);
             node = node.Parent;
         }
 
+        //get the count of the nodes for found path
+
         mPathViz.positionCount = reverse_indices.Count;
         for (int i = reverse_indices.Count - 1; i >= 0; i--)
         {
+            //reverse indices will be added as way points for car controller
             carController.AddWayPoint(new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y, reverse_indices[i].Point.z));
-            mPathViz.SetPosition(i, new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y + 0.5f, reverse_indices[i].Point.z));
+            //setting points for found path
+            mPathViz.SetPosition(i, new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y + 1.0f, reverse_indices[i].Point.z));
         }
 
-        // We set the goal to be the start for next pathfinding
+        //For next path finding, we need to start from previouse goal
         mStart = mGoal;
     }
 
     void OnPathNotFound()
     {
-        Debug.Log("Cannot find path to destination");
-
-        if (StatusText)
-        {
-            StatusText.text = "Cannot find path to destination";
-        }
+        Debug.Log( "Destination not found!" );
+        StatusText.text = "Destination not found!";
     }
-
-    private bool dropped = false;
 
     private void Update()
     {
@@ -189,10 +295,13 @@ public class CityGraph : MonoBehaviour
         {
             if(!dropped)
             {
-                Debug.Log("Back to stop");
+                Debug.Log( "Passenger dropped, Now moving back to drop" );
+                StatusText.text = "Passenger dropped, Now moving back to drop";
+                passenger.gameObject.gameObject.SetActive(true);
 
+                //again initialize path finder but in reverse order
                 mPathFinder.Initialize(preGoal, preStart);
-                StartCoroutine(Coroutine_FindPathSteps());
+                StartCoroutine(GetPathSteps());
                 dropped = true;
             }
 
