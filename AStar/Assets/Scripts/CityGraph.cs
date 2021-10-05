@@ -35,7 +35,7 @@ public class CityGraph : MonoBehaviour
     //path material
     public Material pathMat;
     //dropped variable for passanger
-    private bool dropped = false;
+    public bool dropped = false;
 
     [Header("Nodes and Connections")]
 
@@ -246,13 +246,14 @@ public class CityGraph : MonoBehaviour
         while (mPathFinder.Status == PathFinderStatus.RUNNING)
         {
             mPathFinder.Step();
+          
             yield return null;
         }
     }
 
     public void OnPathFound()
     {
-        Debug.Log( "Destination Path found" );
+        //Debug.Log( "Destination Path found" );
         StatusText.text = "Destination Path found";
 
         PathFinder<StopPoint>.PathFinderNode node = mPathFinder.CurrentNode;
@@ -280,31 +281,54 @@ public class CityGraph : MonoBehaviour
 
         //For next path finding, we need to start from previouse goal
         mStart = mGoal;
+
+        if(!dropped)
+            InvokeRepeating( "stopWatch", 0, 1 );
+    }
+
+    int sec = 0;
+    void stopWatch()
+    {
+        sec++;
     }
 
     void OnPathNotFound()
     {
-        Debug.Log( "Destination not found!" );
+       // Debug.Log( "Destination not found!" );
         StatusText.text = "Destination not found!";
     }
 
+
+    Vector3 k;
     private void Update()
     {
         Vector3 g = new Vector3(mGoal.Value.Point.x, mGoal.Value.Point.y, mGoal.Value.Point.z);
+
         if (Vector3.Distance(carController.transform.position, g ) == 0f)
         {
-            if(!dropped)
+            if( !dropped )
             {
-                Debug.Log( "Passenger dropped, Now moving back to drop" );
-                StatusText.text = "Passenger dropped, Now moving back to drop";
-                passenger.gameObject.gameObject.SetActive(true);
+                //Debug.Log( "Passenger dropped, Now moving back" );
+                
+                StatusText.text = "Passenger dropped, Now moving back";
+                passenger.gameObject.gameObject.SetActive( true );
+
+                k = new Vector3( preStart.Value.Point.x, preStart.Value.Point.y, preStart.Value.Point.z );
 
                 //again initialize path finder but in reverse order
-                mPathFinder.Initialize(preGoal, preStart);
-                StartCoroutine(GetPathSteps());
+                mPathFinder.Initialize( preGoal, preStart );
+                StartCoroutine( GetPathSteps() );
                 dropped = true;
             }
+        }
 
+        if( dropped && Vector3.Distance( carController.transform.position, k ) == 0 )
+        {
+            dropped = false;
+
+            CancelInvoke( "stopWatch" );
+            Debug.Log( "Time : " + sec + " seconds" );
+            Debug.Log( "Distance : " + carController.speed * sec );
         }
     }
 }
