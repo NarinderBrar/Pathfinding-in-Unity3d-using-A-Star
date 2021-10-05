@@ -42,6 +42,8 @@ public class CityGraph : MonoBehaviour
     //list of way points
     public Transform[] wayPoints;
 
+    List<Vector3> pathPointS;
+
     [System.Serializable]
     public class Pairs
     {
@@ -258,6 +260,8 @@ public class CityGraph : MonoBehaviour
 
         PathFinder<StopPoint>.PathFinderNode node = mPathFinder.CurrentNode;
 
+        pathPointS = new List<Vector3>();
+
         //reverse the found indices
         List<StopPoint> reverse_indices = new List<StopPoint>();
 
@@ -275,6 +279,8 @@ public class CityGraph : MonoBehaviour
         {
             //reverse indices will be added as way points for car controller
             carController.AddWayPoint(new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y, reverse_indices[i].Point.z));
+
+            pathPointS.Add( new Vector3( reverse_indices[i].Point.x, reverse_indices[i].Point.y, reverse_indices[i].Point.z ));
             //setting points for found path
             mPathViz.SetPosition(i, new Vector3(reverse_indices[i].Point.x, reverse_indices[i].Point.y + 1.0f, reverse_indices[i].Point.z));
         }
@@ -328,7 +334,19 @@ public class CityGraph : MonoBehaviour
 
             CancelInvoke( "stopWatch" );
             Debug.Log( "Time : " + sec + " seconds" );
-            Debug.Log( "Distance : " + carController.speed * sec );
+
+            Vector3 p = Vector3.zero;
+            float d = 0.0f;
+
+			for( int i = 0; i < pathPointS.Count; i++ )
+			{
+                if( i > 0 )
+                    d += Vector3.Distance(p,pathPointS[i]);
+                
+                p = pathPointS[i];
+			}
+
+            Debug.Log( "Distance : " + d );
         }
     }
 }
