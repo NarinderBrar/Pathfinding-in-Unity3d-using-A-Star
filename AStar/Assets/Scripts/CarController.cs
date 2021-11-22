@@ -31,6 +31,7 @@ public class CarController : MonoBehaviour
 	public void AddWayPoint( Vector3 pt )
 	{
 		mWayPoints.Enqueue( pt );
+
 	}
 
 	public IEnumerator Move()
