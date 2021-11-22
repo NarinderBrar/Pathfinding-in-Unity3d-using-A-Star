@@ -11,4 +11,4 @@ A-Star based autonomous intelligent agent that find route between given start an
 <li>You can select goal location in Unity3d inspector.</li>
 <li>Agent will respond with other objects in the environment, like trafic lights</li>
 
-[product-screenshot]: images/Screenshot.jpg
+[product-screenshot]: images/Screenshot.JPG
