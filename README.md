@@ -10,4 +10,9 @@ A-Star based autonomous intelligent agent that find route between given start an
 <li>After reaching goal point, agent can return to the start location.</li>
 <li>Agent can respond to other objects in the environment, like trafic lights or pedestrian.</li>
 
+## This code is adapted from following tutorial
+https://faramira.com/implement-a-generic-pathfinder-in-unity-using-csharp/
+
+https://github.com/shamim-akhtar/tutorial-pathfinding
+
 [product-screenshot]: images/Screenshot.JPG
